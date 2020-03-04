@@ -8,7 +8,7 @@ import re
 from datetime import datetime
 import random
 
-engine = create_engine('postgresql+psycopg2://postgres:3365@localhost:5432/postgres',echo=True)
+engine = create_engine(DATABASE, echo=True)
 Session = sessionmaker(bind=engine)
 session = Session()
 
@@ -27,6 +27,24 @@ def check_in_db(tgid):
     return text
 
 
+def check_in_db_enemy(nickname):
+    one = session.query(Hero).filter_by(nickname=nickname).first()
+    return one
+
+def check_in_db_member(telegram_id):
+    one = session.query(Members).filter_by(telegram_id=telegram_id).first()
+    return one
+
+
+
+def one_row_tgid_members(telegram_id):
+        one = session.query(Members).filter_by(telegram_id=telegram_id).all()
+        two = []
+        for i in one:
+            two.append(i)
+        print(two)
+        return two
+
 
 def one_row_tgid_hero(tgid):
     try:
@@ -39,12 +57,23 @@ def one_row_tgid_hero(tgid):
         print('NO')
         return text
 
-def add_new_hero(tgid ,nickname, frac, otryad, zvanie, rang, adena, attack, armor, STR, PSI, RAD, INT, AGIL,MAXHP,last_update, crit):
-    new_hero = Hero(tgid=tgid ,nickname=nickname, frac=frac, otryad=otryad, zvanie=zvanie, rang=rang, adena=adena, attack=attack, armor=armor, STR=STR, PSI=PSI, RAD=RAD, INT=INT, AGIL=AGIL,MAXHP=MAXHP,last_update=last_update, crit=crit)
+def add_new_hero(tgid ,nickname, frac, otryad, zvanie, rang, adena, attack, armor,PSI, RAD,MAXHP,last_update, crit):
+    new_hero = Hero(tgid=tgid ,nickname=nickname, frac=frac, otryad=otryad, zvanie=zvanie, rang=rang, adena=adena, attack=attack, armor=armor,PSI=PSI, RAD=RAD,MAXHP=MAXHP,last_update=last_update, crit=crit)
     session.add(new_hero)
     session.commit()
 
-def update_hero(tgid ,nickname, frac, rang, adena, otryad, attack, armor, STR, PSI, RAD, INT, AGIL,MAXHP,last_update,crit):
+def add_new_memb(telegram_id,username):
+    new_memb = Members(telegram_id=telegram_id, username=username)
+    session.add(new_memb)
+    session.commit()
+
+
+def del_new_memb(telegram_id):
+    session.query(Members).filter_by(telegram_id=telegram_id).delete()
+    session.commit()
+
+
+def update_hero(tgid ,nickname, frac, rang, adena, otryad, attack, armor, PSI, RAD,MAXHP,last_update,crit):
     hero = session.query(Hero).filter_by(tgid=tgid).first()
     hero.nickname=nickname
     hero.otryad =otryad
@@ -53,11 +82,8 @@ def update_hero(tgid ,nickname, frac, rang, adena, otryad, attack, armor, STR, P
     hero.adena=adena
     hero.attack=attack
     hero.armor=armor
-    hero.STR=STR
     hero.PSI=PSI
     hero.RAD=RAD
-    hero.INT=INT
-    hero.AGIL=AGIL
     hero.MAXHP=MAXHP
     hero.last_update=last_update
     hero.crit=crit
@@ -69,7 +95,7 @@ def one_row_tgid_hero(userid):
 
 def parse_kpk(msg):
     id = re.search(r'🆔(\d+)', msg.text).group(1)
-    frac = re.search(r'(📯Группировка:) (.?)(.{1,125})', msg.text).group(3)
+    frac = re.search(r'(📯Группировка:) (.{1,125})', msg.text).group(2)
     try:
         otr = re.search(r'🎗Отряд:(.{1,125})(/squad)', msg.text).group(1)
     except:
@@ -80,26 +106,23 @@ def parse_kpk(msg):
     armor = re.search(r'🛡Броня:(.?)(\d+)', msg.text).group(2)
     adena = re.search(r'💰Рубли:(.?)(.{1,125})', msg.text).group(2)
     attack = re.search(r'💥Атака(.?)(\d+)', msg.text).group(2)
-    Sila = re.search(r'💪🏻Сила:(.?)(\d+)', msg.text).group(2)
     psi = re.search(r'🌀Псизащита(.?)(\d+)', msg.text).group(2)
     rad = re.search(r'♻️Радзащита(.?)(\d+)', msg.text).group(2)
-    intel = re.search(r'🔬Интеллект(.?)(.?)(\d+)', msg.text).group(3)  # 3 group
-    lvk = re.search(r'🥏Ловкость (.?)(.?)(.?)(\d+)', msg.text).group(4)  # check
     crit = re.search(r'⚡️Крит (\d+)',msg.text).group(1)
-    if frac == 'Бандиты':
-        try:
+    # if frac == 'Бандиты':
+    try:
             userid = one_row_tgid_hero(id)
             print(userid.tgid)
             print(crit)
             update_hero(tgid=id, nickname=nickname, frac=frac, otryad=otr, rang=rang, adena=adena, attack=attack,
                         armor=armor,
-                        STR=Sila, PSI=psi, RAD=rad, INT=intel, AGIL=lvk, MAXHP=MAXHP, last_update=msg.date, crit=crit)
-        except:
+                        PSI=psi, RAD=rad,MAXHP=MAXHP, last_update=msg.date, crit=crit)
+    except:
             add_new_hero(tgid=id, nickname=nickname, zvanie=None, otryad=otr, frac=frac, rang=rang, adena=adena,
-                         attack=attack, armor=armor, STR=Sila, PSI=psi, RAD=rad, INT=intel, AGIL=lvk, MAXHP=MAXHP,
+                         attack=attack, armor=armor,PSI=psi, RAD=rad,MAXHP=MAXHP,
                          last_update=msg.date, crit=crit)
-    else:
-        print('Ухади')
+    # else:
+    #     print('Ухади')
 
 
 def profile(msg,tgid):
@@ -110,10 +133,10 @@ def profile(msg,tgid):
             lastupdate = datetime.utcfromtimestamp(data.last_update).strftime('%Y-%m-%d %H:%M:%S')
         except:
             lastupdate = '31536001'
-        text = f'📁Профиль:🔪 {data.nickname}\n' \
+        text = f'📁Профиль: {data.nickname}\n' \
             f'️├👤Юзернейм: @{msg.from_user.username}\n' \
             f'├🎫ID: {data.tgid}\n' \
-            f'├📯 Группировка: 🔪{data.frac}\n' \
+            f'├📯 Группировка: {data.frac}\n' \
             f'├♠️ Банда: {data.otryad}\n' \
             f'└💬Погремуха: {data.zvanie}\n\n' \
             f'Общие данные:\n' \
@@ -125,15 +148,14 @@ def profile(msg,tgid):
             f'└💥 {data.attack} ' \
             f'⚡️ {data.crit}\n\n' \
             f'Основные статы:\n' \
-            f'├💪🏻 {data.STR} 🥏 {data.AGIL}\n' \
-            f'├🌀 {data.PSI} 🔬 {data.INT}\n' \
-            f'└♻️ {data.RAD}\n\n' \
+            f'└🌀 {data.PSI} ♻️ {data.RAD}' \
+            f'\n\n' \
             f'📝Статистика pvp:\n' \
             f'├⚔️ 0 (0%)\n' \
             f'└☠️ 0 (0%)\n' \
                f'🕰Last update: {lastupdate}'
     except:
-        text = "что то пошло не так"
+        text = "что-то пошло не так"
         print('Ошибка в def profile / func.py')
         return text
         #todo сделать компактный вид профиля
@@ -142,21 +164,21 @@ def profile(msg,tgid):
 def mini_profile(tgid):
     try:
         data = one_row_tgid_hero(tgid)
-        text = f'''📁Профиль:🔪 {data.nickname}
+        text = f'''📁Профиль: {data.nickname}
 ├♠️ Банда: {data.otryad}
 └💬Погремуха: {data.zvanie}
 
 ├⚜️Ранг: {data.rang}   
 └💰Рубли: {data.adena}
 
-├♥️ {data.MAXHP} 🛡 {data.armor} 💥 {data.attack}
-├💪🏻 {data.STR} 🥏 {data.AGIL} 
-├🌀 {data.PSI} 🔬 {data.INT}
-└♻️ {data.RAD} ⚡️ {data.crit}
+├♥️ {data.MAXHP} 🛡 {data.armor}
+├💥 {data.attack} ⚡️ {data.crit} 
+└🌀 {data.PSI} ♻️ {data.RAD}
+
 Полный вид /full
         '''
     except:
-        text = "что то пошло не так"
+        text = "что-то пошло не так"
         print('Ошибка в def mini_profile / func.py')
         return text
     return text
