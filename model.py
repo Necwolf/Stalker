@@ -1,9 +1,10 @@
 from sqlalchemy import create_engine, Column, String, Integer, Float, BigInteger
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
+from config import DATABASE
 
 
-engine = create_engine('postgresql+psycopg2://postgres:3365@localhost:5432/postgres',echo=True)
+engine = create_engine(DATABASE,echo=True)
 Session = sessionmaker(bind=engine)
 base = declarative_base(engine)
 session = Session()
@@ -40,6 +41,26 @@ class User(base):
         return "'%s','%s','%s','%s'" % (self.id, self.telegram_id, self.first_name, self.last_name)
 
 
+
+class Members(base):
+    __tablename__ = 'Members'
+
+    id = Column(Integer, primary_key=True)
+    telegram_id = Column(Integer, nullable=False)
+    username = Column(String)
+
+
+
+    def __str__(self, id, telegram_id, username):
+        self.id = id
+        self.telegram_id = telegram_id
+        self.username = username
+
+
+    def __repr__(self):
+        return "'%s','%s','%s'" % (self.id, self.telegram_id, self.username)
+
+
 class Hero(base):
     __tablename__ = 'Hero'
 
@@ -52,11 +73,8 @@ class Hero(base):
     adena = Column(Integer)
     attack = Column(Integer)
     armor = Column(Integer)
-    STR = Column(Integer)
     PSI = Column(Integer)
     RAD = Column(Integer)
-    INT = Column(Integer)
-    AGIL = Column(Integer)
     MAXHP = Column(Integer)
     last_update = Column(Integer)
     crit = Column(Integer)
@@ -74,20 +92,17 @@ class Hero(base):
         self.adena = adena
         self.attack = attack
         self.armor = armor
-        self.STR = STR
         self.PSI = PSI
         self.RAD = RAD
-        self.INT = INT
-        self.AGIL = AGIL
         self.MAXHP = MAXHP
         self.last_update = last_update
         self.crit = crit
 
 
     def __repr__(self):
-        return "'%s','%s',%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s'" % \
+        return "'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s'" % \
                (self.tgid, self.nickname, self.frac, self.otryad,self.zvanie,self.rang,self.adena,self.attack,
-                self.armor,self.STR,self.PSI,self.RAD,self.INT,self.AGIL,self.MAXHP,self.last_update, self.crit)
+                self.armor,self.PSI,self.RAD,self.MAXHP,self.last_update, self.crit)
 
 
 
